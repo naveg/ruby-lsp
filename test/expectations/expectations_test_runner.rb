@@ -5,7 +5,7 @@ class ExpectationsTestRunner < Minitest::Test
   TEST_EXP_DIR = "test/expectations"
   TEST_FIXTURES_DIR = "test/fixtures"
   TEST_RUBY_LSP_FIXTURES = File.join(TEST_FIXTURES_DIR, "*.rb")
-  TEST_Prism_FIXTURES = File.join(TEST_FIXTURES_DIR, "yarp/test/yarp/fixtures/**", "*.txt")
+  TEST_Prism_FIXTURES = File.join(TEST_FIXTURES_DIR, "prism/test/prism/fixtures/**", "*.txt")
 
   class << self
     def expectations_tests(handler_class, expectation_suffix)
@@ -107,8 +107,8 @@ class ExpectationsTestRunner < Minitest::Test
     end
 
     # Ensure that the test name include path context to avoid duplicate
-    # from test/fixtures/yarp/test/yarp/fixtures/unparser/corpus/semantic/and.txt
-    # to test_fixtures_yarp_test_yarp_fixtures_unparser_corpus_semantic_and
+    # from test/fixtures/prism/test/prism/fixtures/unparser/corpus/semantic/and.txt
+    # to test_fixtures_prism_test_prism_fixtures_unparser_corpus_semantic_and
     def uniq_name_from_path(path)
       path.gsub("/", "_").gsub('.txt', '')
     end
