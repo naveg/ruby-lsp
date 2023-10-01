@@ -25,37 +25,37 @@ module RubyLsp
 
       NODES_THAT_CAN_BE_PARENTS = T.let(
         [
-          YARP::ArgumentsNode,
-          YARP::ArrayNode,
-          YARP::AssocNode,
-          YARP::BeginNode,
-          YARP::BlockNode,
-          YARP::CallNode,
-          YARP::CaseNode,
-          YARP::ClassNode,
-          YARP::DefNode,
-          YARP::ElseNode,
-          YARP::EnsureNode,
-          YARP::ForNode,
-          YARP::HashNode,
-          YARP::HashPatternNode,
-          YARP::IfNode,
-          YARP::InNode,
-          YARP::InterpolatedStringNode,
-          YARP::KeywordHashNode,
-          YARP::LambdaNode,
-          YARP::LocalVariableWriteNode,
-          YARP::ModuleNode,
-          YARP::ParametersNode,
-          YARP::RescueNode,
-          YARP::StringConcatNode,
-          YARP::StringNode,
-          YARP::UnlessNode,
-          YARP::UntilNode,
-          YARP::WhenNode,
-          YARP::WhileNode,
+          Prism::ArgumentsNode,
+          Prism::ArrayNode,
+          Prism::AssocNode,
+          Prism::BeginNode,
+          Prism::BlockNode,
+          Prism::CallNode,
+          Prism::CaseNode,
+          Prism::ClassNode,
+          Prism::DefNode,
+          Prism::ElseNode,
+          Prism::EnsureNode,
+          Prism::ForNode,
+          Prism::HashNode,
+          Prism::HashPatternNode,
+          Prism::IfNode,
+          Prism::InNode,
+          Prism::InterpolatedStringNode,
+          Prism::KeywordHashNode,
+          Prism::LambdaNode,
+          Prism::LocalVariableWriteNode,
+          Prism::ModuleNode,
+          Prism::ParametersNode,
+          Prism::RescueNode,
+          Prism::StringConcatNode,
+          Prism::StringNode,
+          Prism::UnlessNode,
+          Prism::UntilNode,
+          Prism::WhenNode,
+          Prism::WhileNode,
         ].freeze,
-        T::Array[T.class_of(YARP::Node)],
+        T::Array[T.class_of(Prism::Node)],
       )
 
       sig { params(document: Document).void }
@@ -74,11 +74,11 @@ module RubyLsp
 
       private
 
-      sig { override.params(node: T.nilable(YARP::Node)).void }
+      sig { override.params(node: T.nilable(Prism::Node)).void }
       def visit(node)
         return if node.nil?
 
-        range = if node.is_a?(YARP::InterpolatedStringNode)
+        range = if node.is_a?(Prism::InterpolatedStringNode)
           create_heredoc_selection_range(node, @stack.last)
         else
           create_selection_range(node.location, @stack.last)
@@ -94,7 +94,7 @@ module RubyLsp
 
       sig do
         params(
-          node: YARP::InterpolatedStringNode,
+          node: Prism::InterpolatedStringNode,
           parent: T.nilable(Support::SelectionRange),
         ).returns(Support::SelectionRange)
       end
@@ -119,7 +119,7 @@ module RubyLsp
 
       sig do
         params(
-          location: YARP::Location,
+          location: Prism::Location,
           parent: T.nilable(Support::SelectionRange),
         ).returns(Support::SelectionRange)
       end

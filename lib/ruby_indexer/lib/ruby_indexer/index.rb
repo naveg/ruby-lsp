@@ -161,7 +161,7 @@ module RubyIndexer
     sig { params(indexable_path: IndexablePath, source: T.nilable(String)).void }
     def index_single(indexable_path, source = nil)
       content = source || File.read(indexable_path.full_path)
-      visitor = IndexVisitor.new(self, YARP.parse(content), indexable_path.full_path)
+      visitor = IndexVisitor.new(self, Prism.parse(content), indexable_path.full_path)
       visitor.run
 
       require_path = indexable_path.require_path
@@ -241,7 +241,7 @@ module RubyIndexer
       sig { returns(String) }
       attr_reader :file_path
 
-      sig { returns(YARP::Location) }
+      sig { returns(Prism::Location) }
       attr_reader :location
 
       sig { returns(T::Array[String]) }
@@ -250,7 +250,7 @@ module RubyIndexer
       sig { returns(Symbol) }
       attr_accessor :visibility
 
-      sig { params(name: String, file_path: String, location: YARP::Location, comments: T::Array[String]).void }
+      sig { params(name: String, file_path: String, location: Prism::Location, comments: T::Array[String]).void }
       def initialize(name, file_path, location, comments)
         @name = name
         @file_path = file_path
@@ -305,7 +305,7 @@ module RubyIndexer
             nesting: T::Array[String],
             name: String,
             file_path: String,
-            location: YARP::Location,
+            location: Prism::Location,
             comments: T::Array[String],
           ).void
         end

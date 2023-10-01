@@ -32,8 +32,8 @@ module RubyLsp
 
       sig do
         params(
-          target: T.nilable(YARP::Node),
-          parent: T.nilable(YARP::Node),
+          target: T.nilable(Prism::Node),
+          parent: T.nilable(Prism::Node),
           emitter: EventEmitter,
           message_queue: Thread::Queue,
         ).void
@@ -47,20 +47,20 @@ module RubyLsp
 
         highlight_target =
           case target
-          when YARP::GlobalVariableReadNode, YARP::GlobalVariableAndWriteNode, YARP::GlobalVariableOperatorWriteNode,
-            YARP::GlobalVariableOrWriteNode, YARP::GlobalVariableTargetNode, YARP::GlobalVariableWriteNode,
-            YARP::InstanceVariableAndWriteNode, YARP::InstanceVariableOperatorWriteNode,
-            YARP::InstanceVariableOrWriteNode, YARP::InstanceVariableReadNode, YARP::InstanceVariableTargetNode,
-            YARP::InstanceVariableWriteNode, YARP::ConstantAndWriteNode, YARP::ConstantOperatorWriteNode,
-            YARP::ConstantOrWriteNode, YARP::ConstantPathAndWriteNode, YARP::ConstantPathNode,
-            YARP::ConstantPathOperatorWriteNode, YARP::ConstantPathOrWriteNode, YARP::ConstantPathTargetNode,
-            YARP::ConstantPathWriteNode, YARP::ConstantReadNode, YARP::ConstantTargetNode, YARP::ConstantWriteNode,
-            YARP::ClassVariableAndWriteNode, YARP::ClassVariableOperatorWriteNode, YARP::ClassVariableOrWriteNode,
-            YARP::ClassVariableReadNode, YARP::ClassVariableTargetNode, YARP::ClassVariableWriteNode,
-            YARP::LocalVariableAndWriteNode, YARP::LocalVariableOperatorWriteNode, YARP::LocalVariableOrWriteNode,
-            YARP::LocalVariableReadNode, YARP::LocalVariableTargetNode, YARP::LocalVariableWriteNode, YARP::CallNode,
-            YARP::BlockParameterNode, YARP::KeywordParameterNode, YARP::KeywordRestParameterNode,
-            YARP::OptionalParameterNode, YARP::RequiredParameterNode, YARP::RestParameterNode
+          when Prism::GlobalVariableReadNode, Prism::GlobalVariableAndWriteNode, Prism::GlobalVariableOperatorWriteNode,
+            Prism::GlobalVariableOrWriteNode, Prism::GlobalVariableTargetNode, Prism::GlobalVariableWriteNode,
+            Prism::InstanceVariableAndWriteNode, Prism::InstanceVariableOperatorWriteNode,
+            Prism::InstanceVariableOrWriteNode, Prism::InstanceVariableReadNode, Prism::InstanceVariableTargetNode,
+            Prism::InstanceVariableWriteNode, Prism::ConstantAndWriteNode, Prism::ConstantOperatorWriteNode,
+            Prism::ConstantOrWriteNode, Prism::ConstantPathAndWriteNode, Prism::ConstantPathNode,
+            Prism::ConstantPathOperatorWriteNode, Prism::ConstantPathOrWriteNode, Prism::ConstantPathTargetNode,
+            Prism::ConstantPathWriteNode, Prism::ConstantReadNode, Prism::ConstantTargetNode, Prism::ConstantWriteNode,
+            Prism::ClassVariableAndWriteNode, Prism::ClassVariableOperatorWriteNode, Prism::ClassVariableOrWriteNode,
+            Prism::ClassVariableReadNode, Prism::ClassVariableTargetNode, Prism::ClassVariableWriteNode,
+            Prism::LocalVariableAndWriteNode, Prism::LocalVariableOperatorWriteNode, Prism::LocalVariableOrWriteNode,
+            Prism::LocalVariableReadNode, Prism::LocalVariableTargetNode, Prism::LocalVariableWriteNode, Prism::CallNode,
+            Prism::BlockParameterNode, Prism::KeywordParameterNode, Prism::KeywordRestParameterNode,
+            Prism::OptionalParameterNode, Prism::RequiredParameterNode, Prism::RestParameterNode
             Support::HighlightTarget.new(target)
           end
 
@@ -69,7 +69,7 @@ module RubyLsp
         emitter.register(self, :on_node) if @target
       end
 
-      sig { params(node: T.nilable(YARP::Node)).void }
+      sig { params(node: T.nilable(Prism::Node)).void }
       def on_node(node)
         return if node.nil?
 

@@ -2,10 +2,10 @@
 # frozen_string_literal: true
 
 module RubyIndexer
-  class IndexVisitor < YARP::Visitor
+  class IndexVisitor < Prism::Visitor
     extend T::Sig
 
-    sig { params(index: Index, parse_result: YARP::ParseResult, file_path: String).void }
+    sig { params(index: Index, parse_result: Prism::ParseResult, file_path: String).void }
     def initialize(index, parse_result, file_path)
       @index = index
       @parse_result = parse_result
@@ -15,7 +15,7 @@ module RubyIndexer
         parse_result.comments.to_h do |c|
           [c.location.start_line, c]
         end,
-        T::Hash[Integer, YARP::Comment],
+        T::Hash[Integer, Prism::Comment],
       )
 
       super()
@@ -26,41 +26,41 @@ module RubyIndexer
       visit(@parse_result.value)
     end
 
-    sig { params(node: T.nilable(YARP::Node)).void }
+    sig { params(node: T.nilable(Prism::Node)).void }
     def visit(node)
       case node
-      when YARP::ProgramNode, YARP::StatementsNode
+      when Prism::ProgramNode, Prism::StatementsNode
         visit_child_nodes(node)
-      when YARP::ClassNode
+      when Prism::ClassNode
         add_index_entry(node, Index::Entry::Class)
-      when YARP::ModuleNode
+      when Prism::ModuleNode
         add_index_entry(node, Index::Entry::Module)
-      when YARP::ConstantWriteNode, YARP::ConstantOrWriteNode
+      when Prism::ConstantWriteNode, Prism::ConstantOrWriteNode
         name = fully_qualify_name(node.name.to_s)
         add_constant(node, name)
-      when YARP::ConstantPathWriteNode, YARP::ConstantPathOrWriteNode, YARP::ConstantPathOperatorWriteNode,
-        YARP::ConstantPathAndWriteNode
+      when Prism::ConstantPathWriteNode, Prism::ConstantPathOrWriteNode, Prism::ConstantPathOperatorWriteNode,
+        Prism::ConstantPathAndWriteNode
 
         # ignore variable constants like `var::FOO` or `self.class::FOO`
-        return unless node.target.parent.nil? || node.target.parent.is_a?(YARP::ConstantReadNode)
+        return unless node.target.parent.nil? || node.target.parent.is_a?(Prism::ConstantReadNode)
 
         name = fully_qualify_name(node.target.location.slice)
         add_constant(node, name)
-      when YARP::CallNode
+      when Prism::CallNode
         message = node.message
         handle_private_constant(node) if message == "private_constant"
       end
     end
 
     # Override to avoid using `map` instead of `each`
-    sig { params(nodes: T::Array[T.nilable(YARP::Node)]).void }
+    sig { params(nodes: T::Array[T.nilable(Prism::Node)]).void }
     def visit_all(nodes)
       nodes.each { |node| visit(node) }
     end
 
     private
 
-    sig { params(node: YARP::CallNode).void }
+    sig { params(node: Prism::CallNode).void }
     def handle_private_constant(node)
       arguments = node.arguments&.arguments
       return unless arguments
@@ -68,9 +68,9 @@ module RubyIndexer
       first_argument = arguments.first
 
       name = case first_argument
-      when YARP::StringNode
+      when Prism::StringNode
         first_argument.content
-      when YARP::SymbolNode
+      when Prism::SymbolNode
         first_argument.value
       end
 
@@ -88,12 +88,12 @@ module RubyIndexer
     sig do
       params(
         node: T.any(
-          YARP::ConstantWriteNode,
-          YARP::ConstantOrWriteNode,
-          YARP::ConstantPathWriteNode,
-          YARP::ConstantPathOrWriteNode,
-          YARP::ConstantPathOperatorWriteNode,
-          YARP::ConstantPathAndWriteNode,
+          Prism::ConstantWriteNode,
+          Prism::ConstantOrWriteNode,
+          Prism::ConstantPathWriteNode,
+          Prism::ConstantPathOrWriteNode,
+          Prism::ConstantPathOperatorWriteNode,
+          Prism::ConstantPathAndWriteNode,
         ),
         name: String,
       ).void
@@ -103,17 +103,17 @@ module RubyIndexer
       comments = collect_comments(node)
 
       @index << case value
-      when YARP::ConstantReadNode, YARP::ConstantPathNode
+      when Prism::ConstantReadNode, Prism::ConstantPathNode
         Index::Entry::UnresolvedAlias.new(value.slice, @stack.dup, name, @file_path, node.location, comments)
-      when YARP::ConstantWriteNode, YARP::ConstantAndWriteNode, YARP::ConstantOrWriteNode,
-        YARP::ConstantOperatorWriteNode
+      when Prism::ConstantWriteNode, Prism::ConstantAndWriteNode, Prism::ConstantOrWriteNode,
+        Prism::ConstantOperatorWriteNode
 
         # If the right hand side is another constant assignment, we need to visit it because that constant has to be
         # indexed too
         visit(value)
         Index::Entry::UnresolvedAlias.new(value.name.to_s, @stack.dup, name, @file_path, node.location, comments)
-      when YARP::ConstantPathWriteNode, YARP::ConstantPathOrWriteNode, YARP::ConstantPathOperatorWriteNode,
-        YARP::ConstantPathAndWriteNode
+      when Prism::ConstantPathWriteNode, Prism::ConstantPathOrWriteNode, Prism::ConstantPathOperatorWriteNode,
+        Prism::ConstantPathAndWriteNode
 
         visit(value)
         Index::Entry::UnresolvedAlias.new(value.target.slice, @stack.dup, name, @file_path, node.location, comments)
@@ -122,7 +122,7 @@ module RubyIndexer
       end
     end
 
-    sig { params(node: T.any(YARP::ClassNode, YARP::ModuleNode), klass: T.class_of(Index::Entry)).void }
+    sig { params(node: T.any(Prism::ClassNode, Prism::ModuleNode), klass: T.class_of(Index::Entry)).void }
     def add_index_entry(node, klass)
       name = node.constant_path.location.slice
 
@@ -137,7 +137,7 @@ module RubyIndexer
       @stack.pop
     end
 
-    sig { params(node: YARP::Node).returns(T::Array[String]) }
+    sig { params(node: Prism::Node).returns(T::Array[String]) }
     def collect_comments(node)
       comments = []
 
