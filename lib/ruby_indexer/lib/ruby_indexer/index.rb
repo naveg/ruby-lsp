@@ -241,22 +241,37 @@ module RubyIndexer
       sig { returns(String) }
       attr_reader :file_path
 
-      sig { returns(YARP::Location) }
-      attr_reader :location
-
       sig { returns(T::Array[String]) }
       attr_reader :comments
 
       sig { returns(Symbol) }
       attr_accessor :visibility
 
-      sig { params(name: String, file_path: String, location: YARP::Location, comments: T::Array[String]).void }
+      sig { returns(Integer) }
+      attr_reader :start_line
+
+      sig { returns(Integer) }
+      attr_reader :start_column
+
+      sig { returns(Integer) }
+      attr_reader :end_line
+
+      sig { returns(Integer) }
+      attr_reader :end_column
+
+      sig do
+        params(name: String, file_path: String, location: T.any(YARP::Location, Entry), comments: T::Array[String]).void
+      end
       def initialize(name, file_path, location, comments)
         @name = name
         @file_path = file_path
         @location = location
         @comments = comments
         @visibility = T.let(:public, Symbol)
+        @start_line = T.let(location.start_line, Integer)
+        @start_column = T.let(location.start_column, Integer)
+        @end_line = T.let(location.end_line, Integer)
+        @end_column = T.let(location.end_column, Integer)
       end
 
       sig { returns(String) }
@@ -326,7 +341,7 @@ module RubyIndexer
 
         sig { params(target: String, unresolved_alias: UnresolvedAlias).void }
         def initialize(target, unresolved_alias)
-          super(unresolved_alias.name, unresolved_alias.file_path, unresolved_alias.location, unresolved_alias.comments)
+          super(unresolved_alias.name, unresolved_alias.file_path, unresolved_alias, unresolved_alias.comments)
 
           @target = target
         end

@@ -139,7 +139,6 @@ module RubyLsp
         end
 
         @_response = entries.filter_map do |entry|
-          location = entry.location
           # If the project has Sorbet, then we only want to handle go to definition for constants defined in gems, as an
           # additional behavior on top of jumping to RBIs. Sorbet can already handle go to definition for all constants
           # in the project, even if the files are typed false
@@ -153,8 +152,8 @@ module RubyLsp
           Interface::Location.new(
             uri: URI::Generic.from_path(path: file_path).to_s,
             range: Interface::Range.new(
-              start: Interface::Position.new(line: location.start_line - 1, character: location.start_column),
-              end: Interface::Position.new(line: location.end_line - 1, character: location.end_column),
+              start: Interface::Position.new(line: entry.start_line - 1, character: entry.start_column),
+              end: Interface::Position.new(line: entry.end_line - 1, character: entry.end_column),
             ),
           )
         end
