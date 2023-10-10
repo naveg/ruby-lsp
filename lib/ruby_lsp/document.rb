@@ -180,14 +180,14 @@ module RubyLsp
       extend T::Sig
 
       LINE_BREAK = T.let(0x0A, Integer)
-      # After character 0xFFFF, UTF-16 considers characters to have length 2 and we have to account for that
-      SURROGATE_PAIR_START = T.let(0xFFFF, Integer)
 
       sig { params(source: String, encoding: String).void }
       def initialize(source, encoding)
         @current_line = T.let(0, Integer)
-        @pos = T.let(0, Integer)
-        @source = T.let(source.codepoints, T::Array[Integer])
+        @char_index = T.let(0, Integer)
+        @byte_index = T.let(0, Integer)
+        @source = T.let(source, String)
+        @bytes = T.let(source.bytes, T::Array[Integer])
         @encoding = encoding
       end
 
@@ -196,33 +196,55 @@ module RubyLsp
       def find_char_position(position)
         # Find the character index for the beginning of the requested line
         until @current_line == position[:line]
-          @pos += 1 until LINE_BREAK == @source[@pos]
-          @pos += 1
+          until LINE_BREAK == (byte = T.must(@bytes[@byte_index]))
+            @char_index += 1
+            @byte_index += character_byte_length(byte)
+          end
+
+          @char_index += 1
+          @byte_index += 1
           @current_line += 1
         end
 
         # The final position is the beginning of the line plus the requested column. If the encoding is UTF-16, we also
         # need to adjust for surrogate pairs
-        requested_position = @pos + position[:character]
+        requested_position = @char_index + position[:character]
 
         if @encoding == Constant::PositionEncodingKind::UTF16
-          requested_position -= utf_16_character_position_correction(@pos, requested_position)
+          requested_position -= utf_16_character_position_correction(@char_index, @byte_index, requested_position)
         end
 
         requested_position
       end
 
+      private
+
+      sig { params(byte: Integer).returns(Integer) }
+      def character_byte_length(byte)
+        if byte < 0x80
+          1
+        elsif byte < 0xE0
+          2
+        elsif byte < 0xF0
+          3
+        else
+          4
+        end
+      end
+
       # Subtract 1 for each character after 0xFFFF in the current line from the column position, so that we hit the
       # right character in the UTF-8 representation
-      sig { params(current_position: Integer, requested_position: Integer).returns(Integer) }
-      def utf_16_character_position_correction(current_position, requested_position)
+      sig { params(char_index: Integer, byte_index: Integer, requested_position: Integer).returns(Integer) }
+      def utf_16_character_position_correction(char_index, byte_index, requested_position)
         utf16_unicode_correction = 0
 
-        until current_position == requested_position
-          codepoint = @source[current_position]
-          utf16_unicode_correction += 1 if codepoint && codepoint > SURROGATE_PAIR_START
+        until char_index == requested_position
+          byte = T.must(@bytes[byte_index])
+          length = character_byte_length(byte)
+          utf16_unicode_correction += 1 if length == 4
 
-          current_position += 1
+          byte_index += length
+          char_index += 1
         end
 
         utf16_unicode_correction

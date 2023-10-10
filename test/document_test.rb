@@ -532,6 +532,23 @@ class DocumentTest < Minitest::Test
     assert_equal(value, document.cache_get("textDocument/semanticHighlighting"))
   end
 
+  # def test_benchmark
+  #   require "benchmark/ips"
+
+  #   content = File.read("test/document_test.rb")
+
+  #   Benchmark.ips do |x|
+  #     x.report("old") do
+  #       RubyLsp::Document::Scanner.new(content, "utf-16").find_char_position({ line: 324, character: 14 })
+  #     end
+  #     x.report("new") do
+  #       RubyLsp::Document::Scanner.new(content, "utf-16").find_char_position({ line: 324, character: 14 })
+  #     end
+  #     x.hold!("tmp")
+  #     x.compare!
+  #   end
+  # end
+
   private
 
   def assert_error_edit(actual, error_range)

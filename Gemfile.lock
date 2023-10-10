@@ -12,6 +12,7 @@ GEM
     ansi (1.5.0)
     ast (2.4.2)
     base64 (0.1.1)
+    benchmark-ips (2.12.0)
     builder (3.2.4)
     debug (1.8.0)
       irb (>= 1.5.0)
@@ -116,6 +117,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  benchmark-ips
   bundler (~> 2.4.2)
   debug (~> 1.8)
   minitest (~> 5.20)

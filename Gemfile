@@ -25,4 +25,5 @@ group :development do
   gem "psych", "~> 5.1", require: false
 
   gem "syntax_tree", ">= 6.1.1", "< 7"
+  gem "benchmark-ips"
 end
