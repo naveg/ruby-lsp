@@ -231,6 +231,16 @@ module RubyIndexer
       real_parts.join("::")
     end
 
+    sig { params(method_name: String, receiver_name: String).returns(T.nilable(Entry::Method)) }
+    def resolve_method(method_name, receiver_name)
+      method_entries = T.cast(self[method_name], T.nilable(T::Array[Entry::Method]))
+      owner_entries = self[receiver_name]
+      return unless owner_entries && method_entries
+
+      owner_name = T.must(owner_entries.first).name
+      method_entries.find { |entry| entry.owner&.name == owner_name }
+    end
+
     private
 
     # Attempts to resolve an UnresolvedAlias into a resolved Alias. If the unresolved alias is pointing to a constant
