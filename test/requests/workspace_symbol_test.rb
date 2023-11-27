@@ -56,7 +56,7 @@ class WorkspaceSymbolTest < Minitest::Test
     Singleton.__init__(RubyLsp::DependencyDetector)
     indexable = RubyIndexer::IndexablePath.new(
       nil,
-      "#{RubyLsp::WORKSPACE_URI.to_standardized_path}/workspace_symbol_foo.rb",
+      "#{Dir.pwd}/workspace_symbol_foo.rb",
     )
 
     @index.index_single(indexable, <<~RUBY)

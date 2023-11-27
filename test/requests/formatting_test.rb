@@ -11,6 +11,7 @@ class FormattingTest < Minitest::Test
       end
       end
     RUBY
+    @workspace_uri = URI::Generic.from_path(path: Dir.pwd)
   end
 
   def test_formats_with_rubocop
@@ -36,7 +37,7 @@ class FormattingTest < Minitest::Test
 
   def test_does_not_format_with_formatter_is_none
     document = RubyLsp::RubyDocument.new(source: "def foo", version: 1, uri: URI::Generic.from_path(path: __FILE__))
-    assert_nil(RubyLsp::Requests::Formatting.new(document, formatter: "none").run)
+    assert_nil(RubyLsp::Requests::Formatting.new(document, @workspace_uri, formatter: "none").run)
   end
 
   def test_syntax_tree_formatting_uses_options_from_streerc
@@ -72,7 +73,7 @@ class FormattingTest < Minitest::Test
   def test_syntax_tree_formatting_ignores_syntax_invalid_documents
     require "ruby_lsp/requests"
     document = RubyLsp::RubyDocument.new(source: "def foo", version: 1, uri: URI::Generic.from_path(path: __FILE__))
-    assert_nil(RubyLsp::Requests::Formatting.new(document, formatter: "syntax_tree").run)
+    assert_nil(RubyLsp::Requests::Formatting.new(document, @workspace_uri, formatter: "syntax_tree").run)
   end
 
   def test_syntax_tree_formatting_returns_nil_if_file_matches_ignore_files_options_from_streerc
@@ -93,7 +94,7 @@ class FormattingTest < Minitest::Test
 
   def test_rubocop_formatting_ignores_syntax_invalid_documents
     document = RubyLsp::RubyDocument.new(source: "def foo", version: 1, uri: URI::Generic.from_path(path: __FILE__))
-    assert_nil(RubyLsp::Requests::Formatting.new(document, formatter: "rubocop").run)
+    assert_nil(RubyLsp::Requests::Formatting.new(document, @workspace_uri, formatter: "rubocop").run)
   end
 
   def test_returns_nil_if_document_is_already_formatted
@@ -106,7 +107,7 @@ class FormattingTest < Minitest::Test
         end
       end
     RUBY
-    assert_nil(RubyLsp::Requests::Formatting.new(document, formatter: "rubocop").run)
+    assert_nil(RubyLsp::Requests::Formatting.new(document, @workspace_uri, formatter: "rubocop").run)
   end
 
   def test_returns_nil_if_document_is_not_in_project_folder
@@ -116,7 +117,7 @@ class FormattingTest < Minitest::Test
       end
       end
     RUBY
-    assert_nil(RubyLsp::Requests::Formatting.new(document).run)
+    assert_nil(RubyLsp::Requests::Formatting.new(document, @workspace_uri).run)
   end
 
   def test_allows_specifying_formatter
@@ -143,7 +144,7 @@ class FormattingTest < Minitest::Test
       include Singleton
       include RubyLsp::Requests::Support::FormatterRunner
 
-      def run(uri, document)
+      def run(uri, workpace_uri, document)
         "#{document.source}\n# formatter by my-custom-formatter"
       end
     end
@@ -160,7 +161,7 @@ class FormattingTest < Minitest::Test
 
   def formatted_document(formatter)
     require "ruby_lsp/requests"
-    RubyLsp::Requests::Formatting.new(@document, formatter: formatter).run&.first&.new_text
+    RubyLsp::Requests::Formatting.new(@document, @workspace_uri, formatter: formatter).run&.first&.new_text
   end
 
   def with_syntax_tree_config_file(contents)

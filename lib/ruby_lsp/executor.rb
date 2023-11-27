@@ -355,7 +355,7 @@ module RubyLsp
       # If formatter is set to `auto` but no supported formatting gem is found, don't attempt to format
       return if @store.formatter == "none"
 
-      Requests::Formatting.new(@store.get(uri), formatter: @store.formatter).run
+      Requests::Formatting.new(@store.get(uri), @store.workspace_uri, formatter: @store.formatter).run
     end
 
     sig do
@@ -444,7 +444,7 @@ module RubyLsp
     sig { params(uri: URI::Generic).returns(T.nilable(Interface::FullDocumentDiagnosticReport)) }
     def diagnostic(uri)
       response = @store.cache_fetch(uri, "textDocument/diagnostic") do |document|
-        Requests::Diagnostics.new(document).run
+        Requests::Diagnostics.new(document, @store.workspace_uri).run
       end
 
       Interface::FullDocumentDiagnosticReport.new(kind: "full", items: response) if response
@@ -603,6 +603,9 @@ module RubyLsp
 
       configured_features = options.dig(:initializationOptions, :enabledFeatures)
       @store.experimental_features = options.dig(:initializationOptions, :experimentalFeaturesEnabled) || false
+
+      workspace_uri = options.dig(:workspaceFolders, 0, :uri)
+      @store.workspace_uri = URI(workspace_uri) if workspace_uri
 
       enabled_features = case configured_features
       when Array

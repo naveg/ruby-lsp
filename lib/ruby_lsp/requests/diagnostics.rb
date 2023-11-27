@@ -21,11 +21,12 @@ module RubyLsp
     class Diagnostics < BaseRequest
       extend T::Sig
 
-      sig { params(document: Document).void }
-      def initialize(document)
+      sig { params(document: Document, workspace_uri: URI::Generic).void }
+      def initialize(document, workspace_uri)
         super(document)
 
         @uri = T.let(document.uri, URI::Generic)
+        @workspace_uri = workspace_uri
       end
 
       sig { override.returns(T.nilable(T.all(T::Array[Interface::Diagnostic], Object))) }
@@ -37,7 +38,7 @@ module RubyLsp
 
         # Don't try to run RuboCop diagnostics for files outside the current working directory
         path = @uri.to_standardized_path
-        return unless path.nil? || path.start_with?(T.must(WORKSPACE_URI.to_standardized_path))
+        return unless path.nil? || path.start_with?(T.must(@workspace_uri.to_standardized_path))
 
         Support::RuboCopDiagnosticsRunner.instance.run(@uri, @document).map!(&:to_lsp_diagnostic)
       end

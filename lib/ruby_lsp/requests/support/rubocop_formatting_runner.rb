@@ -20,13 +20,12 @@ module RubyLsp
           @runner = T.let(RuboCopRunner.new("-a"), RuboCopRunner)
         end
 
-        sig { override.params(uri: URI::Generic, document: Document).returns(String) }
-        def run(uri, document)
+        sig { override.params(uri: URI::Generic, workspace_uri: URI::Generic, document: Document).returns(String) }
+        def run(uri, workspace_uri, document)
           filename = T.must(uri.to_standardized_path || uri.opaque)
 
           # Invoke RuboCop with just this file in `paths`
           @runner.run(filename, document.source)
-
           @runner.formatted_source
         end
       end

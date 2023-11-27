@@ -12,7 +12,7 @@ class DiagnosticsTest < Minitest::Test
       uri: URI::Generic.from_path(path: fixture_path),
     )
 
-    result = RubyLsp::Requests::Diagnostics.new(document).run
+    result = RubyLsp::Requests::Diagnostics.new(document, URI::Generic.from_path(path: Dir.pwd)).run
     assert_empty(result)
   end
 
@@ -23,7 +23,7 @@ class DiagnosticsTest < Minitest::Test
       end
     RUBY
 
-    assert_nil(RubyLsp::Requests::Diagnostics.new(document).run)
+    assert_nil(RubyLsp::Requests::Diagnostics.new(document, URI::Generic.from_path(path: Dir.pwd)).run)
   end
 
   def test_returns_syntax_error_diagnostics
@@ -31,7 +31,7 @@ class DiagnosticsTest < Minitest::Test
       def foo
     RUBY
 
-    diagnostics = T.must(RubyLsp::Requests::Diagnostics.new(document).run)
+    diagnostics = T.must(RubyLsp::Requests::Diagnostics.new(document, URI::Generic.from_path(path: Dir.pwd)).run)
 
     assert_equal(2, diagnostics.length)
     assert_equal("Expected an `end` to close the `def` statement", T.must(diagnostics.last).message)

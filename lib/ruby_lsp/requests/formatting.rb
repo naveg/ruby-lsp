@@ -53,12 +53,13 @@ module RubyLsp
 
       extend T::Sig
 
-      sig { params(document: Document, formatter: String).void }
-      def initialize(document, formatter: "auto")
+      sig { params(document: Document, workspace_uri: URI::Generic, formatter: String).void }
+      def initialize(document, workspace_uri, formatter: "auto")
         super(document)
 
         @uri = T.let(document.uri, URI::Generic)
         @formatter = formatter
+        @workspace_uri = workspace_uri
       end
 
       sig { override.returns(T.nilable(T.all(T::Array[Interface::TextEdit], Object))) }
@@ -67,7 +68,7 @@ module RubyLsp
 
         # Don't try to format files outside the current working directory
         path = @uri.to_standardized_path
-        return unless path.nil? || path.start_with?(T.must(WORKSPACE_URI.to_standardized_path))
+        return unless path.nil? || path.start_with?(T.must(@workspace_uri.to_standardized_path))
 
         return if @document.syntax_error?
 
@@ -95,7 +96,7 @@ module RubyLsp
         formatter_runner = Formatting.formatters[@formatter]
         raise InvalidFormatter, "Formatter is not available: #{@formatter}" unless formatter_runner
 
-        formatter_runner.run(@uri, @document)
+        formatter_runner.run(@uri, @workspace_uri, @document)
       end
     end
   end
