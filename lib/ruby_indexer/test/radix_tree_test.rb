@@ -31,6 +31,23 @@ module RubyIndexer
       assert_equal(["foo"], tree.search("foo"))
     end
 
+    def test_nested_split_items
+      tree = RadixTree.new
+      tree.insert("foo", "foo")
+      tree.insert("foo/bar", "foo/bar")
+      tree.insert("foo/ba", "foo/ba")
+
+      # Verify that the tree structure is correct
+      assert_equal(<<~TREE, tree.print_tree)
+        "" => nil
+          "foo" => "foo"
+              "/ba" => "foo/ba"
+                  "r" => "foo/bar"
+      TREE
+
+      assert_equal(["foo", "foo/ba", "foo/bar"], tree.search("foo"))
+    end
+
     def test_complex_split_items
       tree = RadixTree.new
       tree.insert("foo", "foo")

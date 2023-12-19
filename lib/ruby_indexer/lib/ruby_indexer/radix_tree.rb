@@ -58,66 +58,76 @@ module RubyIndexer
     # Inserts a `value` using the given `key`
     sig { params(key: String, value: Value).void }
     def insert(key, value)
-      node = T.let(@root, Node[Value])
+      node = @root
+      key_length = key.length
       characters_matched = 0
+      key_rest = key
 
-      while characters_matched < key.length
-        remaining_key = T.must(key[-(key.length - characters_matched)..])
-        found_key, found_node = node.children.find { |edge, _node| remaining_key.start_with?(edge) }
+      # Match characters as far as we can for the given `key`
+      while characters_matched < key_length
+        found_node = node.children.find { |node| key_rest.start_with?(node.key) }
         break unless found_node
 
         node = found_node
-        characters_matched += T.must(found_key).length
+        characters_matched += found_node.key.length
+        key_rest = T.must(key[-(key_length - characters_matched)..])
       end
 
-      # We matched exactly all characters in the key, so all we need to do is insert a child
-      if characters_matched == key.length
+      # If we matched all characters, then a node already exists for this key. We're just overriding its value
+      if characters_matched == key_length
         node.value = value
         return
       end
 
-      rest_of_key = T.must(key[-(key.length - characters_matched)..])
-
-      # We need to find all the nodes that share a common prefix with the requested insertion and then split them
+      # If we didn't match all characters, then we need to check if there's a common prefix between the `key` and any of
+      # the children of the current node, so that we can decide if we can just add another child or split an existing
+      # node
       node_to_split = T.let(nil, T.nilable(Node[Value]))
       max_len = 0
-      node.children.each do |edge, child_node|
-        i = 0
-        i += 1 while i < edge.length && i < rest_of_key.length && edge[i] == rest_of_key[i]
+      remaining_key_length = key_rest.length
+      node.children.each do |child_node|
+        edge = child_node.key
+        edge_len = edge.length
+        prefix_len = 0
 
-        if i > max_len
-          node_to_split = child_node
-          max_len = i
+        while prefix_len < edge_len && prefix_len < remaining_key_length && edge[prefix_len] == key_rest[prefix_len]
+          prefix_len += 1
         end
+
+        next if prefix_len < max_len
+
+        node_to_split = child_node
+        max_len = prefix_len
       end
 
-      # If the node is a leaf, then it has no children and therefore there is never a need to split the key. We can just
-      # insert its first child
+      # If none of the child nodes share a common prefix with `key`, then this is a brand new child for the current node
       unless node_to_split
-        node.children[rest_of_key] = Node.new(rest_of_key, value, node)
+        node.children << Node.new(key_rest, value, node)
         return
       end
 
-      prefix = T.must(rest_of_key[0...max_len])
       # Let's create a new intermediate node on which we'll nest the children of the longest matching prefix node
-      new_node = node.children[prefix] = Node.new(prefix, nil, node)
-
+      prefix = T.must(key_rest[0...max_len])
       remaining_split_key = T.must(node_to_split.key[max_len...])
-      # We delete the old longest matching node
-      node.children.delete(node_to_split.key)
+      new_node = Node.new(prefix, nil, node)
+      node.children << new_node
+
+      # We remove the node that we're splitting
+      node.children.delete(node_to_split)
+
+      # Reassign the key and parent. The node that we're splitting will become a child of the new intermediate node and
+      # its key will become only the part remaining after the common prefix
       node_to_split.key = remaining_split_key
       node_to_split.parent = new_node
-      new_node.children[remaining_split_key] = node_to_split
+      new_node.children << node_to_split
 
-      # Now we can insert the new node
-      node.children[prefix] = new_node
-
-      if key == prefix
+      # If the length of the common prefix covers the entire remaining key, then we should set the value of the new node
+      # to be the new value instead of pushing a new child
+      if max_len == remaining_key_length
         new_node.value = value
       else
-        # Now we can insert the new node for the remaining of the key
-        remaining_split_key = T.must(rest_of_key[max_len...])
-        new_node.children[remaining_split_key] = Node.new(remaining_split_key, value, new_node)
+        # If there are still characters remaining from `key`, then we create a new child
+        new_node.children << Node.new(T.must(key_rest[max_len...]), value, new_node)
       end
     end
 
@@ -135,7 +145,7 @@ module RubyIndexer
       parent = T.let(T.must(node.parent), T.nilable(Node[Value]))
 
       while parent
-        parent.children.delete(node.key)
+        parent.children.delete(node)
         return if !parent.leaf? || parent.value?
 
         node = parent
@@ -159,7 +169,9 @@ module RubyIndexer
       while node && !node.leaf? && characters_matched < key.length
         remaining_key = T.must(key[-(key.length - characters_matched)..])
 
-        node.children.each do |edge, next_node|
+        node.children.each do |next_node|
+          edge = next_node.key
+
           if remaining_key.start_with?(edge)
             node = next_node
             characters_matched += edge.length
@@ -186,7 +198,7 @@ module RubyIndexer
 
       Value = type_member { { upper: Object } }
 
-      sig { returns(T::Hash[String, Node[Value]]) }
+      sig { returns(T::Array[Node[Value]]) }
       attr_reader :children
 
       sig { returns(String) }
@@ -203,7 +215,7 @@ module RubyIndexer
         @key = key
         @value = value
         @parent = parent
-        @children = {}
+        @children = []
       end
 
       sig { returns(T::Boolean) }
@@ -220,11 +232,7 @@ module RubyIndexer
       def collect
         result = []
         result << @value if value?
-
-        @children.each_value do |node|
-          result.concat(node.collect)
-        end
-
+        @children.each { |node| result.concat(node.collect) }
         result
       end
 
@@ -233,7 +241,7 @@ module RubyIndexer
         indent = "  " * level
         <<~INSPECT.chomp
           #{indent}#{@key.inspect} => #{@value.inspect}
-          #{children.map { |_k, v| "#{indent}#{v.print_node(level + 1)}" }.join}
+          #{@children.map { |node| "#{indent}#{node.print_node(level + 1)}" }.join}
         INSPECT
       end
     end
