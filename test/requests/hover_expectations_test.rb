@@ -263,9 +263,8 @@ class HoverExpectationsTest < ExpectationsTestRunner
 
       def create_hover_listener(nesting, index, dispatcher)
         klass = Class.new(RubyLsp::Listener) do
-          attr_reader :_response
-
-          def initialize(dispatcher)
+          def initialize(response_builder, dispatcher)
+            @response_builder = response_builder
             super
             dispatcher.register(self, :on_constant_read_node_enter)
           end
@@ -276,7 +275,10 @@ class HoverExpectationsTest < ExpectationsTestRunner
               kind: "markdown",
               value: "Hello from middleware: #{node.slice}",
             )
-            @_response = RubyLsp::Interface::Hover.new(range: range_from_location(node.location), contents: contents)
+            @response_builder << RubyLsp::Interface::Hover.new(
+              range: range_from_location(node.location),
+              contents: contents,
+            )
           end
         end
 

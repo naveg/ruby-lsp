@@ -58,12 +58,13 @@ module RubyLsp
         return unless target
 
         uri = document.uri
+        @response_builder = T.let(ResponseBuilder.new, ResponseBuilder)
         @listeners = T.let(
-          [Listeners::Hover.new(uri, nesting, index, dispatcher, typechecker_enabled)],
+          [Listeners::Hover.new(@response_builder, uri, nesting, index, dispatcher, typechecker_enabled)],
           T::Array[Listener[ResponseType]],
         )
         Addon.addons.each do |addon|
-          addon_listener = addon.create_hover_listener(nesting, index, dispatcher)
+          addon_listener = addon.create_hover_listener(@response_builder, nesting, index, dispatcher)
           @listeners << addon_listener if addon_listener
         end
 
