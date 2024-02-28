@@ -7,7 +7,6 @@ import { Telemetry } from "./telemetry";
 import DocumentProvider from "./documentProvider";
 import { Workspace } from "./workspace";
 import { Command, STATUS_EMITTER, pathExists } from "./common";
-import { VersionManager } from "./ruby";
 import { StatusItems } from "./status";
 import { TestController } from "./testController";
 import { Debugger } from "./debugger";
@@ -146,7 +145,7 @@ export class RubyLsp {
       if (answer === "See the multi-root workspace docs") {
         vscode.env.openExternal(
           vscode.Uri.parse(
-            "https://github.com/Shopify/ruby-lsp/blob/main/VSCODE.md?tab=readme-ov-file#multi-root-workspaces",
+            "https://github.com/Shopify/vscode-ruby-lsp?tab=readme-ov-file#multi-root-workspaces",
           ),
         );
       }
@@ -204,7 +203,7 @@ export class RubyLsp {
       vscode.commands.registerCommand(Command.FormatterHelp, () => {
         vscode.env.openExternal(
           vscode.Uri.parse(
-            "https://github.com/Shopify/ruby-lsp/blob/main/VSCODE.md#formatting",
+            "https://github.com/Shopify/vscode-ruby-lsp#formatting",
           ),
         );
       }),
@@ -253,17 +252,6 @@ export class RubyLsp {
             .update("enabledFeatures", features, true, true);
         }
       }),
-      vscode.commands.registerCommand(Command.ToggleYjit, () => {
-        const lspConfig = vscode.workspace.getConfiguration("rubyLsp");
-        const yjitEnabled = lspConfig.get("yjit");
-        lspConfig.update("yjit", !yjitEnabled, true, true);
-
-        const workspace = this.currentActiveWorkspace();
-
-        if (workspace) {
-          STATUS_EMITTER.fire(workspace);
-        }
-      }),
       vscode.commands.registerCommand(
         Command.ToggleExperimentalFeatures,
         async () => {
@@ -292,20 +280,10 @@ export class RubyLsp {
             await vscode.commands.executeCommand(result.description);
         },
       ),
-      vscode.commands.registerCommand(
-        Command.SelectVersionManager,
-        async () => {
-          const configuration = vscode.workspace.getConfiguration("rubyLsp");
-          const options = Object.values(VersionManager);
-          const manager = await vscode.window.showQuickPick(options, {
-            placeHolder: `Current: ${configuration.get("rubyVersionManager")}`,
-          });
-
-          if (manager !== undefined) {
-            configuration.update("rubyVersionManager", manager, true, true);
-          }
-        },
-      ),
+      vscode.commands.registerCommand(Command.ChangeRubyVersion, async () => {
+        const workspace = this.currentActiveWorkspace();
+        return workspace?.ruby.changeVersion();
+      }),
       vscode.commands.registerCommand(
         Command.RunTest,
         (_path, name, _command) => {

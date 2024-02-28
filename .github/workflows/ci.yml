@@ -83,11 +83,36 @@ jobs:
           cache: "yarn"
           cache-dependency-path: "vscode"
 
+      - name: Read Ruby version
+        id: read_ruby_version
+        run: |
+          version=$(cat .ruby-version)
+          echo "RUBY_VERSION=$version" >> "$GITHUB_OUTPUT"
+
       # We need some Ruby installed for the environment activation tests
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
+          ruby-version: ${{ steps.read_ruby_version.outputs.RUBY_VERSION }}
+
+      # On GitHub actions, the Ruby binary is installed in a path that's not really standard for version managers. We
+      # create a symlink using a standard path so that we test the same behaviour as in development machines
+      - name: Symlink Ruby on Ubuntu
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir /opt/rubies
+          ln -s /opt/hostedtoolcache/Ruby/3.3.0/x64 /opt/rubies/3.3.0
+
+      - name: Symlink Ruby on MacOS
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir /Users/runner/.rubies
+          ln -s /Users/runner/hostedtoolcache/Ruby/3.3.0/x64 /Users/runner/.rubies/3.3.0
+
+      - name: Symlink Ruby on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          New-Item -Path C:\Ruby33-x64 -ItemType SymbolicLink -Value C:\hostedtoolcache\windows\Ruby\3.3.0\x64
 
       - name: Run tests
         working-directory: ./vscode
