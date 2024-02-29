@@ -29,7 +29,7 @@ suite("Ruby environment activation", () => {
     ruby = new Ruby(
       context,
       {
-        uri: { fsPath: tmpPath },
+        uri: vscode.Uri.file(tmpPath),
       } as vscode.WorkspaceFolder,
       outputChannel,
     );
