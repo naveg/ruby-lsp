@@ -45,16 +45,32 @@ module RubyIndexer
 
     sig { void }
     def load_config
-      return unless File.exist?(".index.yml")
+      config_file = if File.exist?(".ruby-lsp.yml")
+        warn("The .index.yml configuration file is deprecated. Please rename it to .ruby-lsp.yml and update the
+          structure as described in the README: https://github.com/Shopify/ruby-lsp?tab=readme-ov-file#configuration")
+        ".ruby-lsp.yml"
+      elsif File.exist?(".index.yml") # previously used for configuration
+        ".index.yml"
+      else
+        return
+      end
 
-      config = YAML.parse_file(".index.yml")
+      config = YAML.parse_file(config_file)
       return unless config
 
-      config_hash = config.to_ruby
+      config_hash = case config_file
+      when ".ruby-lsp.yml"
+        config.to_ruby["indexing"]
+      when ".index.yml"
+        config.to_ruby
+      else
+        raise "Invalid config file: #{config_file}" # Should never be reached
+      end
+
       validate_config!(config_hash)
       apply_config(config_hash)
     rescue Psych::SyntaxError => e
-      raise e, "Syntax error while loading .index.yml configuration: #{e.message}"
+      raise e, "Syntax error while loading #{config_file} configuration: #{e.message}"
     end
 
     sig { returns(T::Array[IndexablePath]) }

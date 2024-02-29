@@ -20,6 +20,23 @@ module RubyIndexer
       assert(indexables.none? { |indexable| indexable.full_path == __FILE__ })
     end
 
+    def test_supports_older_index_configuration
+      FileUtils.mv(".ruby-lsp.yml", ".ruby-lsp.yml.tmp")
+      s = <<~YAML
+        excluded_patterns:
+        - "**/test/fixtures/**/*.rb"
+      YAML
+      File.write(".index.yml", s)
+
+      @config.load_config
+      indexables = @config.indexables
+
+      assert(indexables.none? { |indexable| indexable.full_path.include?("test/fixtures") })
+    ensure
+      FileUtils.rm_f(".index.yml")
+      FileUtils.mv(".ruby-lsp.yml.tmp", ".ruby-lsp.yml")
+    end
+
     def test_indexables_only_includes_gem_require_paths
       @config.load_config
       indexables = @config.indexables
@@ -101,8 +118,8 @@ module RubyIndexer
       assert_equal(indexables.uniq.length, indexables.length)
     end
 
-    def test_configuration_raises_for_unknown_keys
-      Psych::Nodes::Document.any_instance.expects(:to_ruby).returns({ "unknown_config" => 123 })
+    def test_configuration_raises_for_unknown_keys_within_indexing
+      Psych::Nodes::Document.any_instance.expects(:to_ruby).returns({ "indexing" => { "unknown_config" => 123 } })
 
       assert_raises(ArgumentError) do
         @config.load_config
