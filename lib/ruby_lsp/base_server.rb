@@ -41,9 +41,13 @@ module RubyLsp
           uri = message.dig(:params, :textDocument, :uri)
 
           if uri
-            parsed_uri = URI(uri)
-            @store.get(parsed_uri).parse
-            message[:params][:textDocument][:uri] = parsed_uri
+            begin
+              parsed_uri = URI(uri)
+              @store.get(parsed_uri).parse
+              message[:params][:textDocument][:uri] = parsed_uri
+            rescue Errno::ENOENT
+              # If we receive a request for a file that no longer exists, we don't want to fail
+            end
           end
         end
 
@@ -85,7 +89,7 @@ module RubyLsp
     end
 
     # This method is only intended to be used in tests! Pops the latest response that would be sent to the client
-    sig { returns(T.any(Result, Error, Message)) }
+    sig { returns(T.untyped) }
     def pop_response
       @outgoing_queue.pop
     end
@@ -190,6 +194,11 @@ module RubyLsp
 
       @outgoing_queue << message
       @current_request_id += 1 if message.is_a?(Request)
+    end
+
+    sig { params(id: Integer).void }
+    def send_empty_response(id)
+      send_message(Result.new(id: id, response: nil))
     end
 
     sig { abstract.params(message: T::Hash[Symbol, T.untyped]).void }
