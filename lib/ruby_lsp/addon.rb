@@ -26,7 +26,7 @@ module RubyLsp
     abstract!
 
     @addons = T.let([], T::Array[Addon])
-    @addon_classes = T.let([], T::Array[T.class_of(Addon)])
+    @addon_classes = T.let(Set[], T::Set[T.class_of(Addon)])
 
     class << self
       extend T::Sig
@@ -34,7 +34,7 @@ module RubyLsp
       sig { returns(T::Array[Addon]) }
       attr_accessor :addons
 
-      sig { returns(T::Array[T.class_of(Addon)]) }
+      sig { returns(T::Set[T.class_of(Addon)]) }
       attr_reader :addon_classes
 
       # Automatically track and instantiate addon classes
