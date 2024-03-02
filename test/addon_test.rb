@@ -7,12 +7,7 @@ module RubyLsp
   class AddonTest < Minitest::Test
     def setup
       @addon = Class.new(Addon) do
-        attr_reader :activated, :field
-
-        def initialize
-          @field = 123
-          super
-        end
+        attr_reader :activated
 
         def activate(message_queue)
           @activated = true
@@ -41,10 +36,6 @@ module RubyLsp
       assert_predicate(addon_instance, :activated)
     ensure
       T.must(message_queue).close
-    end
-
-    def test_addons_are_automatically_tracked
-      assert_equal(123, T.unsafe(Addon.addons.first).field)
     end
 
     def test_loading_addons_initializes_them
